@@ -23,6 +23,10 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(AuthRequest request) {
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Email is required for registration");
+        }
+        
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -34,6 +38,7 @@ public class AuthService {
             .username(request.getUsername())
             .email(request.getEmail())
             .password(passwordEncoder.encode(request.getPassword()))
+            .role("USER")
             .build();
 
         user = userRepository.save(user);
@@ -45,6 +50,7 @@ public class AuthService {
             .username(user.getUsername())
             .email(user.getEmail())
             .token(token)
+            .role(user.getRole())
             .build();
     }
 
@@ -63,6 +69,7 @@ public class AuthService {
             .username(user.getUsername())
             .email(user.getEmail())
             .token(token)
+            .role(user.getRole())
             .build();
     }
 }
