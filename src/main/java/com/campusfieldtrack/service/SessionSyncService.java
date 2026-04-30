@@ -165,6 +165,7 @@ public class SessionSyncService {
         for (TrackingSession session : sessions) {
             java.util.Map<String, Object> sessionMap = new java.util.HashMap<>();
             sessionMap.put("id", session.getSessionId());
+            sessionMap.put("userId", session.getUser().getId());
             sessionMap.put("startTime", session.getStartTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
             sessionMap.put("endTime", session.getEndTime() != null ? 
                 session.getEndTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : null);
@@ -217,6 +218,7 @@ public class SessionSyncService {
         
         java.util.Map<String, Object> sessionMap = new java.util.HashMap<>();
         sessionMap.put("id", session.getSessionId());
+        sessionMap.put("userId", session.getUser().getId());
         sessionMap.put("startTime", session.getStartTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
         sessionMap.put("endTime", session.getEndTime() != null ? 
             session.getEndTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : null);
