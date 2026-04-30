@@ -66,10 +66,12 @@
 <br/>
 
 - ✅ **JWT-based authentication** with BCrypt password hashing
+- ✅ **Role-based access control** (ADMIN/USER roles)
 - ✅ **Token expiration** (24 hours default)
 - ✅ **Secure endpoints** with Spring Security
 - ✅ **User registration** with email validation
 - ✅ **Password encryption** using BCrypt (strength 12)
+- ✅ **Auto-admin initialization** on first startup
 
 </details>
 
@@ -82,6 +84,31 @@
 - ✅ **Checkpoint tracking** with arrival/departure times
 - ✅ **User-specific sessions** with foreign key relationships
 - ✅ **Automatic timestamp** management
+- ✅ **Session filtering** by user and date range
+
+</details>
+
+<details open>
+<summary><b>👨‍💼 Admin Features</b></summary>
+<br/>
+
+- ✅ **Dashboard statistics** (users, sessions, distance, stops)
+- ✅ **User management** (list all users excluding admins)
+- ✅ **All sessions access** with complete route data
+- ✅ **Excel export** with Apache POI (all users or individual)
+- ✅ **Formatted spreadsheets** with professional styling
+- ✅ **Auto-admin user** (Username: ADMIN-CFT, Password: AdminCft@$)
+
+</details>
+
+<details open>
+<summary><b>👤 User Management</b></summary>
+<br/>
+
+- ✅ **Profile retrieval** by user ID
+- ✅ **Profile updates** (username, email)
+- ✅ **Password change** with current password verification
+- ✅ **User-specific data** isolation
 
 </details>
 
@@ -151,7 +178,7 @@ POST /auth/login
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
+  "username": "user@example.com",
   "password": "SecurePass123"
 }
 ```
@@ -164,11 +191,103 @@ Content-Type: application/json
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "userId": 1,
-    "email": "user@example.com"
+    "email": "user@example.com",
+    "role": "USER"
   },
   "timestamp": 1777530099442
 }
 ```
+
+---
+
+### User Management Endpoints
+
+> **Note:** Requires JWT token in Authorization header
+
+#### Get User Profile
+```http
+GET /user?id={userId}
+Authorization: Bearer <token>
+```
+
+#### Update User Profile
+```http
+PUT /user?id={userId}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "username": "newusername",
+  "email": "newemail@example.com"
+}
+```
+
+#### Change Password
+```http
+PUT /user/password?id={userId}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "currentPassword": "OldPass123",
+  "newPassword": "NewPass456"
+}
+```
+
+---
+
+### Admin Endpoints
+
+> **Note:** Requires JWT token with ADMIN role
+
+#### Get Dashboard Statistics
+```http
+GET /admin/stats
+Authorization: Bearer <admin-token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalUsers": 25,
+    "sessionsToday": 12,
+    "distanceToday": 45.8,
+    "stopsToday": 38
+  }
+}
+```
+
+#### Get All Users (Excludes Admins)
+```http
+GET /admin/users
+Authorization: Bearer <admin-token>
+```
+
+#### Get All Sessions with Routes
+```http
+GET /admin/sessions/all
+Authorization: Bearer <admin-token>
+```
+
+**Response includes complete session data with routePoints and checkpoints**
+
+#### Export All Users to Excel
+```http
+GET /admin/export/all
+Authorization: Bearer <admin-token>
+```
+
+**Returns:** Excel file (.xlsx) with all user data
+
+#### Export Single User to Excel
+```http
+GET /admin/export/user/{userId}
+Authorization: Bearer <admin-token>
+```
+
+**Returns:** Excel file (.xlsx) with specific user data
 
 ---
 
@@ -364,24 +483,29 @@ src/main/java/com/campusfieldtrack/
 ├── CampusFieldTrackApplication.java   # Main application entry
 ├── config/
 │   ├── SecurityConfig.java            # Spring Security configuration
-│   └── GlobalExceptionHandler.java    # Centralized error handling
+│   ├── GlobalExceptionHandler.java    # Centralized error handling
+│   └── AdminUserInitializer.java      # Auto-create admin user on startup
 ├── controller/
 │   ├── AuthController.java            # Authentication endpoints
-│   └── SessionController.java         # Session CRUD endpoints
+│   ├── SessionController.java         # Session CRUD endpoints
+│   ├── UserController.java            # User profile management
+│   └── AdminController.java           # Admin dashboard & export
 ├── dto/
 │   ├── ApiResponse.java               # Standard response wrapper
 │   ├── AuthRequest.java               # Login/register request
-│   ├── AuthResponse.java              # JWT token response
+│   ├── AuthResponse.java              # JWT token response with role
+│   ├── UserRequest.java               # User profile update request
+│   ├── PasswordChangeRequest.java     # Password change request
 │   ├── CheckpointDto.java             # Checkpoint data transfer
 │   └── RoutePointDto.java             # Route point data transfer
 ├── entity/
-│   ├── User.java                      # User entity (JPA)
+│   ├── User.java                      # User entity with role field
 │   ├── TrackingSession.java           # Session entity
 │   ├── RoutePoint.java                # GPS point entity
 │   └── Checkpoint.java                # Stop point entity
 ├── repository/
 │   ├── UserRepository.java            # User data access
-│   ├── SessionRepository.java         # Session data access
+│   ├── TrackingSessionRepository.java # Session data access with stats queries
 │   ├── RoutePointRepository.java      # Route point data access
 │   └── CheckpointRepository.java      # Checkpoint data access
 ├── security/
@@ -389,7 +513,8 @@ src/main/java/com/campusfieldtrack/
 │   └── JwtAuthenticationFilter.java   # JWT filter for requests
 └── service/
     ├── AuthService.java               # Authentication business logic
-    └── SessionSyncService.java        # Session sync business logic
+    ├── SessionSyncService.java        # Session sync with userId support
+    └── ExportService.java             # Excel export with Apache POI
 ```
 
 ### Technology Stack
@@ -402,6 +527,7 @@ src/main/java/com/campusfieldtrack/
 | **Hibernate** | 6.x | JPA implementation |
 | **MySQL Connector** | 8.0.33 | Database driver |
 | **JJWT** | 0.11.5 | JWT token handling |
+| **Apache POI** | 5.2.3 | Excel file generation |
 | **Lombok** | 1.18.30 | Boilerplate code reduction |
 | **BCrypt** | - | Password hashing |
 | **HikariCP** | - | Connection pooling |
@@ -458,10 +584,13 @@ src/main/java/com/campusfieldtrack/
 ```sql
 CREATE TABLE users (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(255) UNIQUE NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
+  role VARCHAR(50) DEFAULT 'USER',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_email (email)
+  INDEX idx_email (email),
+  INDEX idx_username (username)
 );
 ```
 
