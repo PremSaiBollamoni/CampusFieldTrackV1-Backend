@@ -16,4 +16,15 @@ public interface TrackingSessionRepository extends JpaRepository<TrackingSession
     List<TrackingSession> findByUserOrderByStartTimeDesc(User user);
     List<TrackingSession> findByUserAndStartTimeAfterOrderByStartTimeDesc(User user, LocalDateTime startTime);
     boolean existsBySessionId(String sessionId);
+    
+    // Admin queries
+    long countByStartTimeBetween(LocalDateTime start, LocalDateTime end);
+    
+    @org.springframework.data.jpa.repository.Query("SELECT COALESCE(SUM(s.distanceKm), 0) FROM TrackingSession s WHERE s.startTime BETWEEN :start AND :end")
+    double sumDistanceByStartTimeBetween(LocalDateTime start, LocalDateTime end);
+    
+    @org.springframework.data.jpa.repository.Query("SELECT COALESCE(SUM(s.checkpointsCount), 0) FROM TrackingSession s WHERE s.startTime BETWEEN :start AND :end")
+    long sumCheckpointsByStartTimeBetween(LocalDateTime start, LocalDateTime end);
+    
+    long countByUserId(Long userId);
 }
