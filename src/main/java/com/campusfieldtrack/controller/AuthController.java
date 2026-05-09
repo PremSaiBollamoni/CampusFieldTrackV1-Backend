@@ -3,10 +3,13 @@ package com.campusfieldtrack.controller;
 import com.campusfieldtrack.dto.ApiResponse;
 import com.campusfieldtrack.dto.AuthRequest;
 import com.campusfieldtrack.dto.AuthResponse;
+import com.campusfieldtrack.dto.BulkUserImportRequest;
+import com.campusfieldtrack.dto.BulkUserImportResponse;
 import com.campusfieldtrack.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -38,6 +41,25 @@ public class AuthController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/bulk-import")
+    public ResponseEntity<ApiResponse<BulkUserImportResponse>> bulkImport(
+            @Valid @RequestBody BulkUserImportRequest request,
+            Authentication authentication) {
+        try {
+            if (authentication == null || authentication.getDetails() == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Unauthorized: Admin access required"));
+            }
+
+            BulkUserImportResponse response = authService.bulkImportUsers(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Bulk import completed", response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Bulk import failed: " + e.getMessage()));
         }
     }
 

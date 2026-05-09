@@ -2,6 +2,8 @@ package com.campusfieldtrack.service;
 
 import com.campusfieldtrack.dto.AuthRequest;
 import com.campusfieldtrack.dto.AuthResponse;
+import com.campusfieldtrack.dto.BulkUserImportRequest;
+import com.campusfieldtrack.dto.BulkUserImportResponse;
 import com.campusfieldtrack.entity.User;
 import com.campusfieldtrack.repository.UserRepository;
 import com.campusfieldtrack.security.JwtUtil;
@@ -70,6 +72,49 @@ public class AuthService {
             .email(user.getEmail())
             .token(token)
             .role(user.getRole())
+            .build();
+    }
+
+    @Transactional
+    public BulkUserImportResponse bulkImportUsers(BulkUserImportRequest request) {
+        int successCount = 0;
+        int failureCount = 0;
+
+        for (BulkUserImportRequest.UserImportData userData : request.getUsers()) {
+            try {
+                if (userData.getName() == null || userData.getName().isBlank() ||
+                    userData.getEmail() == null || userData.getEmail().isBlank()) {
+                    failureCount++;
+                    continue;
+                }
+
+                if (userRepository.existsByUsername(userData.getName()) ||
+                    userRepository.existsByEmail(userData.getEmail())) {
+                    failureCount++;
+                    continue;
+                }
+
+                String password = (userData.getEmpId() != null ? userData.getEmpId() : userData.getName()) + "@123";
+
+                User user = User.builder()
+                    .username(userData.getName())
+                    .email(userData.getEmail())
+                    .password(passwordEncoder.encode(password))
+                    .role("USER")
+                    .build();
+
+                userRepository.save(user);
+                successCount++;
+            } catch (Exception e) {
+                failureCount++;
+            }
+        }
+
+        return BulkUserImportResponse.builder()
+            .totalProcessed(request.getUsers().size())
+            .successCount(successCount)
+            .failureCount(failureCount)
+            .message("Imported " + successCount + " users, " + failureCount + " failed")
             .build();
     }
 }
