@@ -14,6 +14,8 @@ import javax.validation.constraints.Size;
 @AllArgsConstructor
 @Builder
 public class AuthRequest {
+    private String empId;
+
     @NotBlank(message = "Username is required")
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
@@ -24,4 +26,8 @@ public class AuthRequest {
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
+
+    private String employmentType;
+    private String designation;
+    private String projectAssigned;
 }

@@ -4,6 +4,7 @@ import com.campusfieldtrack.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -19,6 +20,7 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
+@Order(1)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -34,12 +36,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .cors()
             .and()
             .csrf().disable()
+            .httpBasic().disable()
+            .formLogin().disable()
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .authorizeRequests()
-            .antMatchers("/auth/**").permitAll()
+            .antMatchers("/auth/**", "/auth/login", "/auth/register", "/auth/health", "/auth/test-admin", "/auth/reset-admin-password", "/auth/users/**").permitAll()
             .antMatchers("/health").permitAll()
-            .antMatchers("/sessions/**").authenticated()
             .anyRequest().authenticated()
             .and()
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

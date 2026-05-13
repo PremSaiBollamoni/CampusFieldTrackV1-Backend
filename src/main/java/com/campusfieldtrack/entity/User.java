@@ -19,6 +19,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "emp_id", unique = true)
+    private String empId;
+
     @Column(unique = true, nullable = false)
     private String username;
 
@@ -30,6 +33,15 @@ public class User {
 
     @Column(name = "role", nullable = false)
     private String role = "USER";
+
+    @Column(name = "employment_type")
+    private String employmentType;
+
+    @Column(name = "designation")
+    private String designation;
+
+    @Column(name = "project_assigned")
+    private String projectAssigned;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
