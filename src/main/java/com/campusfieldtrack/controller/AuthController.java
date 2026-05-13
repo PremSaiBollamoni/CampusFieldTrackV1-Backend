@@ -82,6 +82,24 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/test-user/{username}")
+    public ResponseEntity<String> testUser(@PathVariable String username) {
+        try {
+            User user = authService.findByUsername(username);
+            return ResponseEntity.ok("User found: " + 
+                "\nUsername: " + user.getUsername() + 
+                "\nEmpId: " + user.getEmpId() +
+                "\nEmail: " + user.getEmail() + 
+                "\nRole: " + user.getRole() +
+                "\nEmployment Type: " + user.getEmploymentType() +
+                "\nDesignation: " + user.getDesignation() +
+                "\nProject: " + user.getProjectAssigned() +
+                "\nPassword Hash: " + user.getPassword().substring(0, 20) + "...");
+        } catch (Exception e) {
+            return ResponseEntity.ok("User NOT found: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/reset-admin-password")
     public ResponseEntity<String> resetAdminPassword() {
         try {
